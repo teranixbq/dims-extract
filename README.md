@@ -68,14 +68,14 @@ dims-extract auth --status
 Download and extract any Figma design file directly by URL:
 
 ```bash
-dims-extract add "https://www.figma.com/design/YCbLdntydnVO7uFv7wfpJg/Archiva" archiva
+dims-extract add "https://www.figma.com/design/AbCdEf123456/SampleDesign" my-app
 ```
 
 The tool will:
 1. Fetch design data from the Figma REST API.
 2. Index all screens, components, styles, modals, and buttons.
 3. Render all screens and components into 2x resolution PNG files.
-4. Save the assets into your MCP hub (`~/dims-extract-mcp/projects/archiva`).
+4. Save the assets into your MCP hub (`~/dims-extract-mcp/projects/my-app`).
 
 ### 3. List and Manage Projects
 

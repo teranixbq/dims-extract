@@ -44,8 +44,8 @@ OPTIONS FOR SERVE:
   --host <ip>               Specify host to bind (default: 0.0.0.0)
 
 EXAMPLES:
-  dims-extract auth figd_abc123xyz
-  dims-extract add "https://www.figma.com/design/YCbLdntydnVO7uFv7wfpJg/Archiva" archiva
+  dims-extract auth figd_your_token_here
+  dims-extract add "https://www.figma.com/design/AbCdEf123456/SampleDesign" my-app
   dims-extract list
   dims-extract serve                  # Local Stdio MCP mode
   dims-extract serve --remote         # Remote SSE mode for Laptop 2

@@ -69,7 +69,7 @@ export function createMcpHandler(mcpRootDir, getBaseUrl = () => "") {
       if (found) return projectsRegistry[found];
     }
 
-    const defaultSlug = slugs.includes("archiva") ? "archiva" : slugs[0];
+    const defaultSlug = slugs[0];
     return projectsRegistry[defaultSlug];
   }
 
