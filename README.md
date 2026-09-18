@@ -18,19 +18,32 @@
 
 ---
 
-## 📦 Installation
+## 📦 Installation (Zero-Permission & No Sudo)
 
-Install globally via npm:
+You can install `dims-extract` instantly without root privileges, avoiding any npm global `EACCES` permission errors:
 
+### Option A: One-line Installer (Recommended for Linux & macOS)
+```bash
+curl -fsSL https://raw.githubusercontent.com/teranixbq/dims-extract/main/install.sh | bash
+```
+
+### Option B: One-line Installer for Windows (PowerShell)
+```powershell
+irm https://raw.githubusercontent.com/teranixbq/dims-extract/main/install.ps1 | iex
+```
+
+### Option C: Via npx Setup Command
+Run this once from your terminal:
+```bash
+npx dims-extract setup-cli
+```
+After running, `dims-extract` will be permanently registered in your user `PATH`.
+
+### Option D: Standard npm
 ```bash
 npm install -g dims-extract
 ```
-
-Or run directly without installing using `npx`:
-
-```bash
-npx dims-extract <command>
-```
+*(Or use directly without installation: `npx dims-extract <command>`)*
 
 ---
 

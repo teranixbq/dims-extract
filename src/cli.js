@@ -33,6 +33,7 @@ COMMANDS:
   remove, rm <name>         Delete an extracted project from local MCP hub
   serve                     Start the MCP server (stdio mode for local AI client)
   serve --remote            Start the MCP server as a Remote HTTP/SSE server (for 2nd laptop)
+  setup-cli                 Install 'dims-extract' directly to user PATH without sudo
   mcp-config                Show ready-to-use configuration for OpenCode, Claude Desktop, Cursor
   config                    Show current storage paths and settings
   help, --help, -h          Show this help message
@@ -310,6 +311,38 @@ Step 2: On Laptop 2, configure OpenCode ("opencode.json"):
   }
 }
 `);
+      return;
+    }
+
+    case "setup-cli": {
+      const isWin = process.platform === "win32";
+      const binDir = path.join(os.homedir(), ".local", "bin");
+      fs.mkdirSync(binDir, { recursive: true });
+
+      if (isWin) {
+        const cmdPath = path.join(binDir, "dims-extract.cmd");
+        fs.writeFileSync(cmdPath, "@echo off\r\nnpx -y dims-extract %*\r\n", "utf8");
+        console.log(`[dims-extract] Launcher created at: ${cmdPath}`);
+      } else {
+        const scriptPath = path.join(binDir, "dims-extract");
+        fs.writeFileSync(scriptPath, "#!/usr/bin/env bash\nexec npx -y dims-extract \"$@\"\n", "utf8");
+        fs.chmodSync(scriptPath, 0o755);
+        console.log(`[dims-extract] Launcher created at: ${scriptPath}`);
+
+        const shell = process.env.SHELL || "";
+        const rcFile = shell.includes("zsh") ? path.join(os.homedir(), ".zshrc") : path.join(os.homedir(), ".bashrc");
+        const currentPath = process.env.PATH || "";
+        if (!currentPath.includes(binDir) && fs.existsSync(rcFile)) {
+          const content = fs.readFileSync(rcFile, "utf8");
+          if (!content.includes(".local/bin")) {
+            fs.appendFileSync(rcFile, `\nexport PATH="$HOME/.local/bin:$PATH"\n`);
+            console.log(`[dims-extract] Added ~/.local/bin to PATH in ${rcFile}`);
+          }
+        }
+      }
+
+      console.log("\n🎉 CLI setup completed! You can now run:");
+      console.log("  dims-extract --help\n");
       return;
     }
 
