@@ -5,7 +5,7 @@
   "main": "./src/index.js",
   "type": "module",
   "bin": {
-    "dims-extract": "./bin/dims-extract.js"
+    "dims-extract": "bin/dims-extract.js"
   },
   "files": [
     "bin",
