@@ -1,4 +1,6 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
+import http from "node:http";
 import path from "node:path";
 import readline from "node:readline";
 import { getMcpDir, getToken } from "./config.js";
@@ -52,8 +54,7 @@ export function loadProjectsRegistry(mcpRootDir) {
   return registry;
 }
 
-export function startMcpServer(customMcpDir) {
-  const mcpRootDir = customMcpDir || getMcpDir();
+export function createMcpHandler(mcpRootDir, getBaseUrl = () => "") {
   let projectsRegistry = loadProjectsRegistry(mcpRootDir);
 
   function resolveProject(projectSlug) {
@@ -144,7 +145,7 @@ export function startMcpServer(customMcpDir) {
     },
     {
       name: "get_screen_image",
-      description: "Get the 2x high-resolution PNG image of a screen as an absolute file path or base64 image block for vision analysis.",
+      description: "Get the 2x high-resolution PNG image of a screen as an absolute file path, network URL, or base64 image block for vision analysis.",
       inputSchema: {
         type: "object",
         properties: {
@@ -159,7 +160,7 @@ export function startMcpServer(customMcpDir) {
           format: {
             type: "string",
             enum: ["path", "base64", "both"],
-            description: "Return mode: 'path' (file path only), 'base64' (image block for vision inspection), or 'both'. Defaults to 'both'.",
+            description: "Return mode: 'path' (file path / URL only), 'base64' (image block for vision inspection), or 'both'. Defaults to 'both'.",
           },
         },
         required: ["screen_id"],
@@ -326,6 +327,7 @@ export function startMcpServer(customMcpDir) {
       );
     }
 
+    const baseUrl = getBaseUrl();
     const formatted = list.map((s) => ({
       id: s.id,
       project: prj.slug,
@@ -333,6 +335,7 @@ export function startMcpServer(customMcpDir) {
       title: s.title,
       dimensions: `${s.dimensions.width}x${s.dimensions.height}`,
       imagePath: path.join(prj.dir, s.imagePath),
+      networkUrl: baseUrl ? `${baseUrl}/images/${prj.slug}/${s.imagePath.replace(/^images\//, "")}` : undefined,
     }));
 
     return { content: [{ type: "text", text: JSON.stringify(formatted, null, 2) }] };
@@ -375,6 +378,8 @@ export function startMcpServer(customMcpDir) {
 
     const detail = prj.screenDetails[scr.id] || scr;
     const absoluteImagePath = path.join(prj.dir, detail.imagePath);
+    const baseUrl = getBaseUrl();
+    const networkUrl = baseUrl ? `${baseUrl}/images/${prj.slug}/${detail.imagePath.replace(/^images\//, "")}` : undefined;
 
     return {
       content: [
@@ -385,6 +390,7 @@ export function startMcpServer(customMcpDir) {
               project: prj.slug,
               ...detail,
               absoluteImagePath,
+              networkUrl,
               imageExists: fs.existsSync(absoluteImagePath),
             },
             null,
@@ -413,6 +419,8 @@ export function startMcpServer(customMcpDir) {
 
     const format = args.format || "both";
     const content = [];
+    const baseUrl = getBaseUrl();
+    const networkUrl = baseUrl ? `${baseUrl}/images/${prj.slug}/${scr.imagePath.replace(/^images\//, "")}` : undefined;
 
     if (format === "base64" || format === "both") {
       const base64Data = fs.readFileSync(absoluteImagePath).toString("base64");
@@ -424,9 +432,13 @@ export function startMcpServer(customMcpDir) {
     }
 
     if (format === "path" || format === "both") {
+      let infoText = `Project: ${prj.slug}\nScreen: ${scr.title} (${scr.role})\nDimensions: ${scr.dimensions?.width}x${scr.dimensions?.height}px\nLocal Path: ${absoluteImagePath}`;
+      if (networkUrl) {
+        infoText += `\nRemote Network URL: ${networkUrl}`;
+      }
       content.push({
         type: "text",
-        text: `Project: ${prj.slug}\nScreen: ${scr.title} (${scr.role})\nDimensions: ${scr.dimensions?.width}x${scr.dimensions?.height}px\nPath: ${absoluteImagePath}`,
+        text: infoText,
       });
     }
 
@@ -445,6 +457,7 @@ export function startMcpServer(customMcpDir) {
       list = list.filter((c) => c.name.toLowerCase().includes(s));
     }
 
+    const baseUrl = getBaseUrl();
     const formatted = list.map((c) => ({
       id: c.id,
       project: prj.slug,
@@ -452,10 +465,12 @@ export function startMcpServer(customMcpDir) {
       type: c.type,
       dimensions: `${c.dimensions.width}x${c.dimensions.height}`,
       imagePath: path.join(prj.dir, c.imagePath),
+      networkUrl: baseUrl ? `${baseUrl}/images/${prj.slug}/${c.imagePath.replace(/^images\//, "")}` : undefined,
       variants: (c.variants || []).map((v) => ({
         id: v.id,
         name: v.name,
         imagePath: path.join(prj.dir, v.imagePath),
+        networkUrl: baseUrl ? `${baseUrl}/images/${prj.slug}/${v.imagePath.replace(/^images\//, "")}` : undefined,
       })),
     }));
 
@@ -486,6 +501,7 @@ export function startMcpServer(customMcpDir) {
     }
 
     const targetProjects = args.project ? [resolveProject(args.project)].filter(Boolean) : Object.values(projectsRegistry);
+    const baseUrl = getBaseUrl();
 
     const matchedScreens = [];
     const matchedComponents = [];
@@ -513,6 +529,7 @@ export function startMcpServer(customMcpDir) {
             title: s.title,
             matchedSnippet: (s.keyTexts || []).find((t) => t.toLowerCase().includes(q)) || s.title,
             imagePath: path.join(prj.dir, s.imagePath),
+            networkUrl: baseUrl ? `${baseUrl}/images/${prj.slug}/${s.imagePath.replace(/^images\//, "")}` : undefined,
           });
         }
       }
@@ -528,6 +545,7 @@ export function startMcpServer(customMcpDir) {
             name: c.name,
             variants: c.variants?.map((v) => v.name),
             imagePath: path.join(prj.dir, c.imagePath),
+            networkUrl: baseUrl ? `${baseUrl}/images/${prj.slug}/${c.imagePath.replace(/^images\//, "")}` : undefined,
           });
         }
       }
@@ -583,7 +601,7 @@ export function startMcpServer(customMcpDir) {
         return {
           protocolVersion: "2024-11-05",
           capabilities: { tools: {}, resources: {} },
-          serverInfo: { name: "dims-extract-mcp", version: "1.0.0" },
+          serverInfo: { name: "dims-extract-mcp", version: "1.1.0" },
         };
 
       case "notifications/initialized":
@@ -676,6 +694,16 @@ export function startMcpServer(customMcpDir) {
     }
   }
 
+  return { handleRequest, TOOLS };
+}
+
+/**
+ * Starts standard Stdio MCP server (for local AI clients)
+ */
+export function startMcpServer(customMcpDir) {
+  const mcpRootDir = customMcpDir || getMcpDir();
+  const { handleRequest } = createMcpHandler(mcpRootDir);
+
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -712,5 +740,161 @@ export function startMcpServer(customMcpDir) {
     }
   });
 
-  console.error(`[dims-extract MCP] Started successfully with ${Object.keys(projectsRegistry).length} project(s) from ${mcpRootDir}`);
+  console.error(`[dims-extract MCP] Stdio server listening on stdio (Hub: ${mcpRootDir})`);
+}
+
+/**
+ * Starts Remote HTTP + SSE MCP Server (for network / multi-laptop access)
+ */
+export function startHttpMcpServer({ port = 3456, host = "0.0.0.0", mcpRootDir = getMcpDir() } = {}) {
+  // Session map for SSE streams: sessionId -> ServerResponse
+  const sseSessions = new Map();
+
+  let activeBaseUrl = `http://localhost:${port}`;
+
+  const { handleRequest } = createMcpHandler(mcpRootDir, () => activeBaseUrl);
+
+  const server = http.createServer(async (req, res) => {
+    // CORS headers
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+    if (req.method === "OPTIONS") {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
+    const reqUrl = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+    const pathname = reqUrl.pathname;
+
+    // 1. SSE Connection Endpoint: GET /sse
+    if (req.method === "GET" && pathname === "/sse") {
+      const sessionId = crypto.randomUUID();
+      res.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      });
+
+      sseSessions.set(sessionId, res);
+      console.error(`[dims-extract Remote] New SSE client connected (Session: ${sessionId})`);
+
+      // Send initial endpoint event
+      const endpointUri = `/messages?sessionId=${sessionId}`;
+      res.write(`event: endpoint\r\ndata: ${endpointUri}\r\n\r\n`);
+
+      req.on("close", () => {
+        sseSessions.delete(sessionId);
+        console.error(`[dims-extract Remote] SSE client disconnected (Session: ${sessionId})`);
+      });
+      return;
+    }
+
+    // 2. Message Post Endpoint: POST /messages?sessionId=...
+    if (req.method === "POST" && pathname === "/messages") {
+      const sessionId = reqUrl.searchParams.get("sessionId");
+      const sseRes = sessionId ? sseSessions.get(sessionId) : null;
+
+      let body = "";
+      req.on("data", (chunk) => {
+        body += chunk;
+      });
+
+      req.on("end", async () => {
+        if (!body) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Empty request body" }));
+          return;
+        }
+
+        try {
+          const rpcReq = JSON.parse(body);
+          res.writeHead(202, { "Content-Type": "text/plain" });
+          res.end("Accepted");
+
+          if (typeof rpcReq.id !== "undefined") {
+            try {
+              const result = await handleRequest(rpcReq);
+              const rpcRes = { jsonrpc: "2.0", id: rpcReq.id, result };
+              if (sseRes && !sseRes.writableEnded) {
+                sseRes.write(`event: message\r\ndata: ${JSON.stringify(rpcRes)}\r\n\r\n`);
+              }
+            } catch (err) {
+              const rpcErr = {
+                jsonrpc: "2.0",
+                id: rpcReq.id,
+                error: { code: err.code || -32000, message: err.message || String(err) },
+              };
+              if (sseRes && !sseRes.writableEnded) {
+                sseRes.write(`event: message\r\ndata: ${JSON.stringify(rpcErr)}\r\n\r\n`);
+              }
+            }
+          } else {
+            await handleRequest(rpcReq);
+          }
+        } catch (parseErr) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Invalid JSON" }));
+        }
+      });
+      return;
+    }
+
+    // 3. Static Images Serving: GET /images/:project/*
+    if (req.method === "GET" && pathname.startsWith("/images/")) {
+      const cleanPath = pathname.replace(/^\/images\//, "");
+      const segments = cleanPath.split("/");
+      const projectSlug = segments[0];
+      const relImagePath = segments.slice(1).join("/");
+
+      const filePath = path.join(mcpRootDir, "projects", projectSlug, "images", relImagePath);
+
+      if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+        res.writeHead(200, {
+          "Content-Type": "image/png",
+          "Cache-Control": "public, max-age=86400",
+        });
+        fs.createReadStream(filePath).pipe(res);
+        return;
+      } else {
+        res.writeHead(404, { "Content-Type": "text/plain" });
+        res.end("Image not found");
+        return;
+      }
+    }
+
+    // 4. Health / Info Endpoint: GET /
+    if (req.method === "GET" && (pathname === "/" || pathname === "/health")) {
+      const registry = loadProjectsRegistry(mcpRootDir);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify(
+          {
+            name: "dims-extract-mcp",
+            status: "running",
+            version: "1.1.0",
+            transport: "sse",
+            sseEndpoint: `${activeBaseUrl}/sse`,
+            projectCount: Object.keys(registry).length,
+            projects: Object.keys(registry),
+          },
+          null,
+          2
+        )
+      );
+      return;
+    }
+
+    res.writeHead(404, { "Content-Type": "text/plain" });
+    res.end("Not found");
+  });
+
+  server.listen(port, host, () => {
+    // Determine accessible IP
+    activeBaseUrl = `http://${host === "0.0.0.0" ? "localhost" : host}:${port}`;
+  });
+
+  return server;
 }
