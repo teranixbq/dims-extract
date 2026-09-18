@@ -1,0 +1,34 @@
+{
+  "name": "dims-extract",
+  "version": "1.0.0",
+  "description": "Figma design extractor and dynamic local MCP server hub with encrypted token storage",
+  "main": "./src/index.js",
+  "type": "module",
+  "bin": {
+    "dims-extract": "./bin/dims-extract.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node ./bin/dims-extract.js",
+    "serve": "node ./bin/dims-extract.js serve"
+  },
+  "keywords": [
+    "figma",
+    "mcp",
+    "model-context-protocol",
+    "design-system",
+    "extractor",
+    "ai-agent",
+    "opencode",
+    "claude-desktop"
+  ],
+  "author": "dims",
+  "license": "MIT"
+}
