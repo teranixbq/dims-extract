@@ -1,49 +1,51 @@
-# dims-extract
+# dims-extract (CLI: `dims`)
 
 > **Figma Design Extractor & Dynamic Local MCP Server Hub** with AES-256-GCM Encrypted Token Storage.
 
-`dims-extract` allows you to extract full Figma design systems (screens, components, tokens, texts, modals, form inputs) and automatically render high-resolution 2x PNG images into a local **Model Context Protocol (MCP)** server hub (`dims-extract-mcp`). Coding agents in **OpenCode**, **Claude Desktop**, and **Cursor** can inspect screens visually and read UI structures completely offline.
+`dims-extract` provides the convenient short CLI command **`dims`** (and `dims-extract`) to extract full Figma design systems (screens, components, tokens, texts, modals, form inputs) and automatically render high-resolution 2x PNG images into a local **Model Context Protocol (MCP)** server hub (`dims-extract-mcp`). Coding agents in **OpenCode**, **Claude Desktop**, and **Cursor** can inspect screens visually and read UI structures completely offline.
 
 ---
 
 ## ⚡ Features
 
+- **Short Command (`dims`):** Fast to type — use `dims auth`, `dims add`, `dims list`, `dims serve`.
 - **Zero External Dependencies:** Built with pure standard Node.js/Bun built-in APIs (`node:crypto`, `node:fs`, `node:readline`).
 - **Encrypted Token Storage:** Figma Personal Access Token is encrypted with **AES-256-GCM** using a machine-derived PBKDF2 key and stored in the OS config directory:
   - **Linux / macOS:** `~/.config/dims-extract/config.json`
   - **Windows:** `%APPDATA%\dims-extract\config.json`
 - **Multi-Project MCP Hub:** Store and manage multiple Figma projects inside a centralized `dims-extract-mcp/` directory.
-- **Vision-Ready for AI:** Returns 2x PNG images via absolute paths or base64 data blocks for LLMs with vision capabilities.
+- **Vision-Ready for AI:** Returns 2x PNG images via absolute paths, network URLs, or base64 data blocks for LLMs with vision capabilities.
 - **Deep UI Indexing:** Automatically extracts and indexes breadcrumbs, modals, dialogs, button labels, and input fields.
 
 ---
 
-## 📦 Installation (Zero-Permission & No Sudo)
+## 📦 Installation
 
-You can install `dims-extract` instantly without root privileges, avoiding any npm global `EACCES` permission errors:
+### Option A: Standard npm (Global)
+```bash
+npm install -g dims-extract
+```
+*(On Linux/macOS with system Node, use `sudo npm install -g dims-extract`)*
 
-### Option A: One-line Installer (Recommended for Linux & macOS)
+After installation, the short command **`dims`** is immediately available:
+```bash
+dims --help
+```
+
+### Option B: One-line Zero-Permission Installer (Linux & macOS)
 ```bash
 curl -fsSL https://raw.githubusercontent.com/teranixbq/dims-extract/main/install.sh | bash
 ```
 
-### Option B: One-line Installer for Windows (PowerShell)
+### Option C: One-line Zero-Permission Installer (Windows PowerShell)
 ```powershell
 irm https://raw.githubusercontent.com/teranixbq/dims-extract/main/install.ps1 | iex
 ```
 
-### Option C: Via npx Setup Command
-Run this once from your terminal:
+### Option D: Direct via npx (Without Installation)
 ```bash
-npx dims-extract setup-cli
+npx dims-extract <command>
 ```
-After running, `dims-extract` will be permanently registered in your user `PATH`.
-
-### Option D: Standard npm
-```bash
-npm install -g dims-extract
-```
-*(Or use directly without installation: `npx dims-extract <command>`)*
 
 ---
 
@@ -54,13 +56,13 @@ npm install -g dims-extract
 Encrypt and store your Figma token in your OS config:
 
 ```bash
-dims-extract auth figd_your_personal_access_token_here
+dims auth figd_your_personal_access_token_here
 ```
 
 Check authentication status anytime:
 
 ```bash
-dims-extract auth --status
+dims auth --status
 ```
 
 ### 2. Extract a Figma Project
@@ -68,7 +70,7 @@ dims-extract auth --status
 Download and extract any Figma design file directly by URL:
 
 ```bash
-dims-extract add "https://www.figma.com/design/AbCdEf123456/SampleDesign" my-app
+dims add "https://www.figma.com/design/AbCdEf123456/SampleDesign" my-app
 ```
 
 The tool will:
@@ -82,13 +84,13 @@ The tool will:
 List all extracted projects:
 
 ```bash
-dims-extract list
+dims list
 ```
 
 Remove a project when no longer needed:
 
 ```bash
-dims-extract remove my-old-project
+dims remove my-old-project
 ```
 
 ---
@@ -98,7 +100,7 @@ dims-extract remove my-old-project
 Get ready-to-copy configurations anytime by running:
 
 ```bash
-dims-extract mcp-config
+dims mcp-config
 ```
 
 ### 1. OpenCode (`opencode.json`)
@@ -111,8 +113,8 @@ Add to `opencode.json` in your workspace or global config:
   "mcp": {
     "dims-figma": {
       "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "dims-extract", "serve"]
+      "command": "dims",
+      "args": ["serve"]
     }
   }
 }
@@ -126,24 +128,8 @@ Add to your Claude Desktop configuration:
 {
   "mcpServers": {
     "dims-figma": {
-      "command": "npx",
-      "args": ["-y", "dims-extract", "serve"]
-    }
-  }
-}
-```
-
-### 3. Direct Node Runner (Without npx)
-
-You can also point directly to the generated standalone server inside your MCP hub directory:
-
-```json
-{
-  "mcp": {
-    "dims-figma": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["/home/nodenix/dims-extract-mcp/server.js"]
+      "command": "dims",
+      "args": ["serve"]
     }
   }
 }
@@ -153,7 +139,7 @@ You can also point directly to the generated standalone server inside your MCP h
 
 ## 🛠️ Available MCP Tools
 
-When `dims-extract serve` is running, AI agents have access to these 9 tools:
+When `dims serve` is running, AI agents have access to these 9 tools:
 
 | Tool Name | Description | Key Parameters |
 |---|---|---|
@@ -172,7 +158,7 @@ When `dims-extract serve` is running, AI agents have access to these 9 tools:
 ## 📖 CLI Reference
 
 ```
-dims-extract <command> [arguments] [options]
+dims <command> [arguments] [options] (alias: dims-extract)
 
 COMMANDS:
   auth [token]              Store and encrypt your Figma Personal Access Token
@@ -181,7 +167,8 @@ COMMANDS:
   add <url> [name]          Download and extract a Figma project into local MCP hub
   list, ls                  List all extracted Figma projects
   remove, rm <name>         Delete an extracted project from local MCP hub
-  serve                     Start the local MCP server over stdio
+  serve                     Start the local MCP server (stdio mode for AI agents)
+  serve --remote            Start the MCP server as Remote HTTP/SSE server (for 2nd laptop)
   mcp-config                Show ready-to-use configuration for OpenCode, Claude Desktop, Cursor
   config                    Show current storage paths and settings
   help, --help, -h          Show help message

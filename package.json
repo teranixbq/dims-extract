@@ -1,10 +1,11 @@
 {
   "name": "dims-extract",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "Figma design extractor and dynamic local MCP server hub with encrypted token storage",
   "main": "./src/index.js",
   "type": "module",
   "bin": {
+    "dims": "bin/dims-extract.js",
     "dims-extract": "bin/dims-extract.js"
   },
   "files": [

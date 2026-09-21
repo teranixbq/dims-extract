@@ -19,10 +19,10 @@ function getLocalNetworkIp() {
 
 function printHelp() {
   console.log(`
-dims-extract - Figma Extractor & Local/Remote MCP Server Hub
+dims - Figma Extractor & Local/Remote MCP Server Hub
 
 USAGE:
-  dims-extract <command> [arguments] [options]
+  dims <command> [arguments] [options] (or: dims-extract)
 
 COMMANDS:
   auth [token]              Store and encrypt your Figma Personal Access Token
@@ -33,7 +33,7 @@ COMMANDS:
   remove, rm <name>         Delete an extracted project from local MCP hub
   serve                     Start the MCP server (stdio mode for local AI client)
   serve --remote            Start the MCP server as a Remote HTTP/SSE server (for 2nd laptop)
-  setup-cli                 Install 'dims-extract' directly to user PATH without sudo
+  setup-cli                 Install 'dims' directly to user PATH without sudo
   mcp-config                Show ready-to-use configuration for OpenCode, Claude Desktop, Cursor
   config                    Show current storage paths and settings
   help, --help, -h          Show this help message
@@ -44,11 +44,11 @@ OPTIONS FOR SERVE:
   --host <ip>               Specify host to bind (default: 0.0.0.0)
 
 EXAMPLES:
-  dims-extract auth figd_your_token_here
-  dims-extract add "https://www.figma.com/design/AbCdEf123456/SampleDesign" my-app
-  dims-extract list
-  dims-extract serve                  # Local Stdio MCP mode
-  dims-extract serve --remote         # Remote SSE mode for Laptop 2
+  dims auth figd_your_token_here
+  dims add "https://www.figma.com/design/AbCdEf123456/SampleDesign" my-app
+  dims list
+  dims serve                  # Local Stdio MCP mode
+  dims serve --remote         # Remote SSE mode for Laptop 2
 `);
 }
 
@@ -320,14 +320,20 @@ Step 2: On Laptop 2, configure OpenCode ("opencode.json"):
       fs.mkdirSync(binDir, { recursive: true });
 
       if (isWin) {
-        const cmdPath = path.join(binDir, "dims-extract.cmd");
-        fs.writeFileSync(cmdPath, "@echo off\r\nnpx -y dims-extract %*\r\n", "utf8");
-        console.log(`[dims-extract] Launcher created at: ${cmdPath}`);
+        const cmdDims = path.join(binDir, "dims.cmd");
+        const cmdExtract = path.join(binDir, "dims-extract.cmd");
+        fs.writeFileSync(cmdDims, "@echo off\r\nnpx -y dims-extract %*\r\n", "utf8");
+        fs.writeFileSync(cmdExtract, "@echo off\r\nnpx -y dims-extract %*\r\n", "utf8");
+        console.log(`[dims] Launchers created at: ${cmdDims} and ${cmdExtract}`);
       } else {
-        const scriptPath = path.join(binDir, "dims-extract");
-        fs.writeFileSync(scriptPath, "#!/usr/bin/env bash\nexec npx -y dims-extract \"$@\"\n", "utf8");
-        fs.chmodSync(scriptPath, 0o755);
-        console.log(`[dims-extract] Launcher created at: ${scriptPath}`);
+        const scriptDims = path.join(binDir, "dims");
+        const scriptExtract = path.join(binDir, "dims-extract");
+        const launcherBody = "#!/usr/bin/env bash\nexec npx -y dims-extract \"$@\"\n";
+        fs.writeFileSync(scriptDims, launcherBody, "utf8");
+        fs.chmodSync(scriptDims, 0o755);
+        fs.writeFileSync(scriptExtract, launcherBody, "utf8");
+        fs.chmodSync(scriptExtract, 0o755);
+        console.log(`[dims] Launchers created at: ${scriptDims} and ${scriptExtract}`);
 
         const shell = process.env.SHELL || "";
         const rcFile = shell.includes("zsh") ? path.join(os.homedir(), ".zshrc") : path.join(os.homedir(), ".bashrc");
@@ -336,13 +342,13 @@ Step 2: On Laptop 2, configure OpenCode ("opencode.json"):
           const content = fs.readFileSync(rcFile, "utf8");
           if (!content.includes(".local/bin")) {
             fs.appendFileSync(rcFile, `\nexport PATH="$HOME/.local/bin:$PATH"\n`);
-            console.log(`[dims-extract] Added ~/.local/bin to PATH in ${rcFile}`);
+            console.log(`[dims] Added ~/.local/bin to PATH in ${rcFile}`);
           }
         }
       }
 
       console.log("\n🎉 CLI setup completed! You can now run:");
-      console.log("  dims-extract --help\n");
+      console.log("  dims --help\n");
       return;
     }
 

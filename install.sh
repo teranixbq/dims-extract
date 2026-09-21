@@ -15,7 +15,7 @@ fi
 BIN_DIR="$HOME/.local/bin"
 mkdir -p "$BIN_DIR"
 
-LAUNCHER="$BIN_DIR/dims-extract"
+LAUNCHER="$BIN_DIR/dims"
 
 cat << 'EOF' > "$LAUNCHER"
 #!/usr/bin/env bash
@@ -23,6 +23,7 @@ exec npx -y dims-extract "$@"
 EOF
 
 chmod +x "$LAUNCHER"
+cp -f "$LAUNCHER" "$BIN_DIR/dims-extract"
 
 # Ensure ~/.local/bin is in PATH in shell rc files
 SHELL_NAME=$(basename "$SHELL")
@@ -47,7 +48,8 @@ if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
 fi
 
 echo ""
-echo "🎉 dims-extract installed successfully into $LAUNCHER!"
+echo "🎉 dims installed successfully into $BIN_DIR!"
 echo "You can now run:"
-echo "  dims-extract --help"
+echo "  dims --help"
+echo "  (or: dims-extract --help)"
 echo ""
