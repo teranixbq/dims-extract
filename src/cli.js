@@ -267,11 +267,11 @@ Listening for connections from Laptop 2... (Press Ctrl+C to stop)
       const lanIp = getLocalNetworkIp();
       console.log(`
 ============================================================
-Ready-to-use MCP Configurations for dims-extract
+Ready-to-use MCP Configurations for dims
 MCP Hub Directory: ${mcpDir}
 ============================================================
 
-A. MODE 1: LOCAL (Used on Laptop 1 where dims-extract is installed)
+A. MODE 1: LOCAL (Used on Laptop 1 where dims is installed)
 ------------------------------------------------------------
 1. OpenCode (add to "opencode.json"):
 {
@@ -279,8 +279,8 @@ A. MODE 1: LOCAL (Used on Laptop 1 where dims-extract is installed)
   "mcp": {
     "dims-figma": {
       "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "dims-extract", "serve"]
+      "command": "dims",
+      "args": ["serve"]
     }
   }
 }
@@ -289,8 +289,8 @@ A. MODE 1: LOCAL (Used on Laptop 1 where dims-extract is installed)
 {
   "mcpServers": {
     "dims-figma": {
-      "command": "npx",
-      "args": ["-y", "dims-extract", "serve"]
+      "command": "dims",
+      "args": ["serve"]
     }
   }
 }
@@ -298,7 +298,7 @@ A. MODE 1: LOCAL (Used on Laptop 1 where dims-extract is installed)
 
 B. MODE 2: REMOTE (Used on Laptop 2 via WiFi / LAN)
 Step 1: On Laptop 1, run:
-  dims-extract serve --remote
+  dims serve --remote
 
 Step 2: On Laptop 2, configure OpenCode ("opencode.json"):
 {
